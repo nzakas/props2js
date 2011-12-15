@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Nicholas C. Zakas. All rights reserved.
+ * Copyright (c) 2011 Nicholas C. Zakas. All rights reserved.
  * http://www.nczonline.net/
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,18 +20,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package net.nczonline.web.datauri;
+package net.nczonline.web.props2js;
 
 import jargs.gnu.CmdLineParser;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.Writer;
-import java.net.URL;
+import java.util.Properties;
 
 
-public class DataURI {    
+public class Props2Js {
 
     
     /**
@@ -41,18 +45,18 @@ public class DataURI {
         
         //default settings
         boolean verbose = false;
-        String charset = null;
         String outputFilename = null;
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         Writer out = null;
-        String mimeType = null;
+        Reader in = null;
         
         //initialize command line parser
         CmdLineParser parser = new CmdLineParser();
         CmdLineParser.Option verboseOpt = parser.addBooleanOption('v', "verbose");
-        CmdLineParser.Option mimeTypeOpt = parser.addStringOption('m', "mime");
         CmdLineParser.Option helpOpt = parser.addBooleanOption('h', "help");
-        CmdLineParser.Option charsetOpt = parser.addStringOption("charset");
         CmdLineParser.Option outputFilenameOpt = parser.addStringOption('o', "output");
+        CmdLineParser.Option nameOpt = parser.addStringOption('n', "name");
+        CmdLineParser.Option outputTypeOpt = parser.addStringOption('t', "to");
         
         try {
             
@@ -67,29 +71,35 @@ public class DataURI {
             } 
             
             //determine boolean options
-            verbose = parser.getOptionValue(verboseOpt) != null;
-            
-            //check for charset
-            charset = (String) parser.getOptionValue(charsetOpt);
-            
-            //check for MIME type
-            mimeType = (String) parser.getOptionValue(mimeTypeOpt);
-
+            verbose = parser.getOptionValue(verboseOpt) != null;            
+          
             //get the file arguments
             String[] fileArgs = parser.getRemainingArgs();
-            
-            //need to have at least one file
-            if (fileArgs.length == 0){
-                System.err.println("[ERROR] No files specified.");
-                System.exit(1);
+            String inputFilename = fileArgs[0];
+
+            if (fileArgs.length == 0) {
+                throw new Exception("No input filename specified.");
             }
-            
-            //only the first filename is used
-            String inputFilename = fileArgs[0];            
-                                  
+
+            in = new InputStreamReader(new FileInputStream(inputFilename), "UTF-8");
+            Properties properties = new Properties();
+            properties.load(in);
+
+            //get output type
+            String outputType = (String) parser.getOptionValue(outputTypeOpt);
+            if (outputType == null){
+                outputType = "json";
+                if (verbose){
+                    System.err.println("[INFO] No output type specified, defaulting to json.");
+                }
+            } else {
+                if (verbose){
+                    System.err.println("[INFO] Output type set to " + outputType + ".");
+                }
+            }
+
             //get output filename
-            outputFilename = (String) parser.getOptionValue(outputFilenameOpt);
-            
+            outputFilename = (String) parser.getOptionValue(outputFilenameOpt);            
             if (outputFilename == null) {
                 if (verbose){
                     System.err.println("[INFO] No output file specified, defaulting to stdout.");
@@ -97,36 +107,62 @@ public class DataURI {
                 
                 out = new OutputStreamWriter(System.out);
             } else {
+                File outputFile = new File(outputFilename);
                 if (verbose){
-                    System.err.println("[INFO] Output file is '" + (new File(outputFilename)).getAbsolutePath() + "'");
+                    System.err.println("[INFO] Output file is '" + outputFile.getAbsolutePath() + "'");
                 }
-                out = new OutputStreamWriter(new FileOutputStream(outputFilename), "UTF-8");
+                out = new OutputStreamWriter(bytes, "UTF-8");
             }            
-            
-            //set verbose option
-            DataURIGenerator.setVerbose(verbose);
-            
-            //determine if the filename is a local file or a URL
-            if (inputFilename.startsWith("http://")){
-                DataURIGenerator.generate(new URL(inputFilename), out, mimeType);
+
+            String name = (String) parser.getOptionValue(nameOpt);
+            if (name == null && !outputType.equalsIgnoreCase("json")){
+                throw new Exception("Missing --name option.");
+            }
+
+            String result = "";
+            if (outputType.equalsIgnoreCase("js")){
+                result = PropertyConverter.convertToJavaScript(properties, name);
+            } else if (outputType.equalsIgnoreCase("jsonp")){
+                result = PropertyConverter.convertToJsonP(properties, name);
             } else {
-                DataURIGenerator.generate(new File(inputFilename), out, mimeType);
-            }          
+                result = PropertyConverter.convertToJson(properties);
+            }
+
+            out.write(result);
             
         } catch (CmdLineParser.OptionException e) {
             usage();
             System.exit(1);            
         } catch (Exception e) { 
-            e.printStackTrace();
+            System.err.println("[ERROR] " + e.getMessage());
+            if (verbose){
+                e.printStackTrace();
+            }
             System.exit(1);
         } finally {
             if (out != null) {
                 try {
                     out.close();
+                    
+                    if(bytes.size() > 0) {
+                        bytes.writeTo(new FileOutputStream(outputFilename));
+                    }
                 } catch (IOException e) {
+                    System.err.println("[ERROR] " + e.getMessage());
+                    if (verbose){
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            try {
+                in.close();
+            } catch (IOException e) {
+                System.err.println("[ERROR] " + e.getMessage());
+                if (verbose){
                     e.printStackTrace();
                 }
-            }            
+            }
         }
         
     }
@@ -136,13 +172,13 @@ public class DataURI {
      */
     private static void usage() {
         System.out.println(
-                "\nUsage: java -jar datauri-x.y.z.jar [options] [input file]\n\n"
+            "\nUsage: java -jar props2js-x.y.z.jar [options] [input file]\n\n"
 
                         + "Global Options\n"
                         + "  -h, --help            Displays this information.\n"
-                        + "  --charset <charset>   Character set of the input file.\n"
                         + "  -v, --verbose         Display informational messages and warnings.\n"
-                        + "  -m, --mime <type>     Mime type to encode into the data URI.\n"
+                        + "  --name <name>         The variable/callback name.\n"
+                        + "  --to <format>         The output format: json (default), jsonp, or js.\n"
                         + "  -o <file>             Place the output into <file>. Defaults to stdout.");
     }
 }

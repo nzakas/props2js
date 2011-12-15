@@ -1,31 +1,43 @@
-CSSEmbed
-Copyright (c) 2009 Nicholas C. Zakas. All rights reserved.
+# Props2Js
 
--------------------------------------------------------------------------------
- About
--------------------------------------------------------------------------------
+Props2Js is a command line utility that converts Java properties files into one
+of three different formats:
 
-CSSEmbed is a small program/library to automate embedding of data URIs in
-CSS files.
+1. JSON
+1. JSONP
+1. JavaScript
 
--------------------------------------------------------------------------------
- License
--------------------------------------------------------------------------------
+The goal is to allow you to easily store configuration data that is needed for
+JavaScript in a simple format and then transform it into a format you need in
+your application.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+## Formats
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+### JSON Format
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+To convert a properties file into JSON, use the following
+
+    java -jar props2js-x.y.z.jar source.properties -t json -o output.json
+
+This reads in the properties file `source.properties` and outputs the JSON
+equivalent into `output.json`.
+
+### JSONP Format
+
+To convert a properties file into JSON, use the following
+
+    java -jar props2js-x.y.z.jar source.properties -t jsonp --name myfunc -o output.jsonp
+
+This reads in the properties file `source.properties` and outputs the JSONP
+equivalent into `output.jsonp`. This is the same as outputting as JSON except
+`myfunc()` is wrapped around the data.
+
+### JavaScript Format
+
+To convert a properties file into JavaScript, use the following
+
+    java -jar props2js-x.y.z.jar source.properties -t js --name myvar -o output.js
+
+This reads in the properties file `source.properties` and outputs the JavaScript
+equivalent into `output.js`. This is the same as outputting as JSON except
+`var myvar=` precedes the JSON and a semicolon follows it.

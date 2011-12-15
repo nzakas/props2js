@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
-<project name="CSSEmbed" default="build.all.jars" basedir=".">
+<project name="props2js" default="build.jar" basedir=".">
  
     <target name="clean" depends="-load.properties">
         <delete dir="${build.dir}" quiet="true"/>
@@ -23,9 +23,8 @@
                source="${class.version}"
                target="${class.version}">
             <classpath>
-                <pathelement location="${lib.dir}/${ant.jar}"/>
                 <pathelement location="${lib.dir}/${jargs.jar}"/>
-                <pathelement location="${lib.dir}/${datauri.jar}"/>
+                <pathelement location="${lib.dir}/${gson.jar}"/>
             </classpath>
         </javac>
     </target>
@@ -40,56 +39,25 @@
                source="${class.version}"
                target="${class.version}">
             <classpath>
-                <pathelement location="${lib.dir}/${ant.jar}"/>
+                <pathelement location="${lib.dir}/${gson.jar}"/>
                 <pathelement location="${lib.dir}/${jargs.jar}"/>
                 <pathelement location="${lib.dir}/${junit.jar}"/>
                 <pathelement location="${build.dir}/classes"/>
             </classpath>
         </javac>
-        <copy todir="${build.dir}/testclasses/net/nczonline/web/cssembed">
+        <copy todir="${build.dir}/testclasses/net/nczonline/web/props2js">
             <fileset dir="${tests.dir}" includes="*.png"/>
             <fileset dir="${tests.dir}" includes="*.css"/>
         </copy>
     </target>
  
-    <target name="build.cssembed.jar" depends="build.classes">
-        <make-jar name="${cssembed.name}" jar="${cssembed.jar}" main="${cssembed.main}">  
+    <target name="build.jar" depends="build.classes">
+        <make-jar name="${props2js.name}" jar="${props2js.jar}" main="${props2js.main}">
             <jar-files>
                 <fileset dir="${build.dir}/classes" includes="**/*.class"/>
             </jar-files>    
         </make-jar>
         
-    </target>
-    
-    <target name="build.datauri.jar" depends="build.classes">
-        <make-jar name="${datauri.name}" jar="${datauri.jar}" main="${datauri.main}">
-            <jar-files>
-                <fileset dir="${build.dir}/classes" includes="**/datauri/*.class"/>
-            </jar-files>    
-        </make-jar>
-    </target>     
-
-    <!-- build all jars -->
-    <target name="build.all.jars" depends="clean,build.cssembed.jar,build.datauri.jar"></target>
-     
- 
-    <target name="build.dist.package" depends="build.cssembed.jar,build.datauri.jar">
-        <mkdir dir="${build.dir}/${dist.package.name}"/>
-        <mkdir dir="${build.dir}/${dist.package.name}/build"/>
-        <copy file="${build.dir}/${jar.name}" todir="${build.dir}/${dist.package.name}/build"/>
-        <copy todir="${build.dir}/${dist.package.name}">
-            <fileset dir=".">
-                <include name="ant.properties"/>
-                <include name="build.xml"/>
-                <include name="doc/**/*"/>
-                <include name="lib/**/*"/>
-                <include name="src/**/*"/>
-                <exclude name="**/.git"/>
-            </fileset>
-        </copy>
-        <zip destfile="${build.dir}/${dist.package.name}.zip"
-             basedir="${build.dir}"
-             includes="${dist.package.name}/**/*"/>
     </target>
  
     <target name="test.classes" depends="build.classes,build.tests">
@@ -101,7 +69,7 @@
                 <classpath>
                     <pathelement location="${build.dir}/classes"/>
                     <pathelement location="${build.dir}/testclasses"/>
-                    <pathelement location="${lib.dir}/${datauri.jar}"/>
+                    <pathelement location="${lib.dir}/${gson.jar}"/>
                     <pathelement location="${lib.dir}/${junit.jar}"/>
                 </classpath>
 
@@ -126,6 +94,7 @@
         <sequential>           
             <mkdir dir="${build.dir}/@{name}-jar"/>
             <unjar src="${lib.dir}/${jargs.jar}" dest="${build.dir}/@{name}-jar"/>
+            <unjar src="${lib.dir}/${gson.jar}" dest="${build.dir}/@{name}-jar"/>
             <copy todir="${build.dir}/@{name}-jar">
                 <jar-files/>
             </copy>
