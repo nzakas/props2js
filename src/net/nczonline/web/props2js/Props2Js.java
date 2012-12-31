@@ -45,6 +45,8 @@ public class Props2Js {
         
         //default settings
         boolean verbose = false;
+		boolean pretty = false;
+		boolean escape = true;
         String outputFilename = null;
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         Writer out = null;
@@ -57,6 +59,8 @@ public class Props2Js {
         CmdLineParser.Option outputFilenameOpt = parser.addStringOption('o', "output");
         CmdLineParser.Option nameOpt = parser.addStringOption('n', "name");
         CmdLineParser.Option outputTypeOpt = parser.addStringOption('t', "to");
+        CmdLineParser.Option prettyOpt = parser.addBooleanOption('p', "pretty");
+        CmdLineParser.Option noEscapeHtmlOpt = parser.addBooleanOption('e', "noescape");
         
         try {
             
@@ -73,7 +77,13 @@ public class Props2Js {
             //determine boolean options
             verbose = parser.getOptionValue(verboseOpt) != null;            
           
-            //get the file arguments
+            //determine if pretty printing is on
+			pretty = parser.getOptionValue(prettyOpt) != null;
+			
+			//determine if we should not escape HTML
+			escape = parser.getOptionValue(noEscapeHtmlOpt) == null;
+
+			//get the file arguments
             String[] fileArgs = parser.getRemainingArgs();
             String inputFilename = fileArgs[0];
 
@@ -121,11 +131,11 @@ public class Props2Js {
 
             String result = "";
             if (outputType.equalsIgnoreCase("js")){
-                result = PropertyConverter.convertToJavaScript(properties, name);
+                result = PropertyConverter.convertToJavaScript(properties, name, pretty, escape);
             } else if (outputType.equalsIgnoreCase("jsonp")){
-                result = PropertyConverter.convertToJsonP(properties, name);
+                result = PropertyConverter.convertToJsonP(properties, name, pretty, escape);
             } else {
-                result = PropertyConverter.convertToJson(properties);
+                result = PropertyConverter.convertToJson(properties, pretty, escape);
             }
 
             out.write(result);
@@ -177,6 +187,8 @@ public class Props2Js {
                         + "Global Options\n"
                         + "  -h, --help            Displays this information.\n"
                         + "  -v, --verbose         Display informational messages and warnings.\n"
+                        + "  -p, --pretty          Print in multiple lines (More human readable).\n"
+                        + "  -e, --noescape        Disable escaping of html charators (Default: escape).\n"
                         + "  --name <name>         The variable/callback name.\n"
                         + "  --to <format>         The output format: json (default), jsonp, or js.\n"
                         + "  -o <file>             Place the output into <file>. Defaults to stdout.");

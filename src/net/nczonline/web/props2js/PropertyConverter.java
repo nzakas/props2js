@@ -24,6 +24,7 @@
 package net.nczonline.web.props2js;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -42,7 +43,7 @@ public class PropertyConverter {
      * @param properties The properties object to convert.
      * @return A JSON string representing the object.
      */
-    public static String convertToJson(Properties properties){
+    public static String convertToJson(Properties properties, boolean pretty, boolean escape){
         JsonObject json = new JsonObject();
         for (Object key: properties.keySet()){
             String value = properties.getProperty(key.toString());
@@ -57,7 +58,17 @@ public class PropertyConverter {
             }
         }
 
-        return new Gson().toJson(json);
+		if(!pretty && escape){
+        	return new Gson().toJson(json);
+		}
+		GsonBuilder builder = new GsonBuilder();
+		if(pretty) {
+			builder.setPrettyPrinting();
+		}
+		if(!escape) {
+			builder.disableHtmlEscaping();
+		}
+		return builder.create().toJson(json);
     }
 
     /**
@@ -67,8 +78,8 @@ public class PropertyConverter {
      * @param callback The name of the callback to call.
      * @return A JSONP string representing the object.
      */
-    public static String convertToJsonP(Properties properties, String callback){
-        return callback + "(" + convertToJson(properties) + ");";
+    public static String convertToJsonP(Properties properties, String callback, boolean pretty, boolean escape){
+        return callback + "(" + convertToJson(properties, pretty, escape) + ");";
     }
 
     /**
@@ -78,8 +89,8 @@ public class PropertyConverter {
      * @param variable The name of the variable to store the object.
      * @return A JavaScript string representing the object.
      */
-    public static String convertToJavaScript(Properties properties, String variable){
-        String result = variable + "=" + convertToJson(properties) + ";";
+    public static String convertToJavaScript(Properties properties, String variable, boolean pretty, boolean escape){
+        String result = variable + "= " + convertToJson(properties, pretty, escape) + ";";
         if (!variable.contains(".")){
             result = "var " + result;
         }
