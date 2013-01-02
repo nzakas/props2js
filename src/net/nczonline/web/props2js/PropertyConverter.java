@@ -90,7 +90,7 @@ public class PropertyConverter {
      * @return A JavaScript string representing the object.
      */
     public static String convertToJavaScript(Properties properties, String variable, boolean pretty, boolean escape){
-        String result = variable + "= " + convertToJson(properties, pretty, escape) + ";";
+        String result = variable + "=" + convertToJson(properties, pretty, escape) + ";";
         if (!variable.contains(".")){
             result = "var " + result;
         }
