@@ -47,6 +47,7 @@ public class Props2Js {
         boolean verbose = false;
 		boolean pretty = false;
 		boolean escape = true;
+        boolean flattenKeys = true;
         String outputFilename = null;
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         Writer out = null;
@@ -61,6 +62,7 @@ public class Props2Js {
         CmdLineParser.Option outputTypeOpt = parser.addStringOption('t', "to");
         CmdLineParser.Option prettyOpt = parser.addBooleanOption('p', "pretty");
         CmdLineParser.Option noEscapeHtmlOpt = parser.addBooleanOption('e', "noescape");
+        CmdLineParser.Option flattenKeysOpt = parser.addBooleanOption('f', "flattenKeys");
         
         try {
             
@@ -76,7 +78,8 @@ public class Props2Js {
             
             //determine boolean options
             verbose = parser.getOptionValue(verboseOpt) != null;            
-          
+            flattenKeys = parser.getOptionValue(flattenKeysOpt) != null;
+
             //determine if pretty printing is on
 			pretty = parser.getOptionValue(prettyOpt) != null;
 			
@@ -92,7 +95,7 @@ public class Props2Js {
             }
 
             in = new InputStreamReader(new FileInputStream(inputFilename), "UTF-8");
-            Properties properties = new Properties();
+            LinkedProperties properties = new LinkedProperties();
             properties.load(in);
 
             //get output type
@@ -131,11 +134,11 @@ public class Props2Js {
 
             String result = "";
             if (outputType.equalsIgnoreCase("js")){
-                result = PropertyConverter.convertToJavaScript(properties, name, pretty, escape);
+                result = PropertyConverter.convertToJavaScript(properties, name, pretty, escape, flattenKeys);
             } else if (outputType.equalsIgnoreCase("jsonp")){
-                result = PropertyConverter.convertToJsonP(properties, name, pretty, escape);
+                result = PropertyConverter.convertToJsonP(properties, name, pretty, escape, flattenKeys);
             } else {
-                result = PropertyConverter.convertToJson(properties, pretty, escape);
+                result = PropertyConverter.convertToJson(properties, pretty, escape, flattenKeys);
             }
 
             out.write(result);
@@ -189,6 +192,7 @@ public class Props2Js {
                         + "  -v, --verbose         Display informational messages and warnings.\n"
                         + "  -p, --pretty          Print in multiple lines (More human readable).\n"
                         + "  -e, --noescape        Disable escaping of html charators (Default: escape).\n"
+                        + "  -f, --flattenKeys     Replace dots in key strings with underscores.\n"
                         + "  --name <name>         The variable/callback name.\n"
                         + "  --to <format>         The output format: json (default), jsonp, or js.\n"
                         + "  -o <file>             Place the output into <file>. Defaults to stdout.");
