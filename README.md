@@ -1,5 +1,7 @@
 # Props2Js
 
+**Notice:** This utility has been end-of-lifed and is no longer supported. It is kept here for legacy purposes. If you're interested in taking over ownership of this project, please [contact me](http://nczonline.net/contact).
+
 Props2Js is a command line utility that converts Java properties files into one
 of three different formats:
 
