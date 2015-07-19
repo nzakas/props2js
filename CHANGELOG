@@ -1,3 +1,8 @@
+December 30, 2012
+
+* Added option to enable pretty printing: [-p | --pretty]
+* Added option to disable escaping of HTML entities like <>: [-e | --noescape]
+
 December 15, 2011 - v1.0.0
 
 * First public release

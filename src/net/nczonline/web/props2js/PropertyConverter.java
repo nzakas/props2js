@@ -24,6 +24,7 @@
 package net.nczonline.web.props2js;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -36,28 +37,43 @@ public class PropertyConverter {
 
     private static Pattern floatPattern = Pattern.compile( "^[0-9]+(\\.[0-9]+)?$" );
     private static Pattern intPattern = Pattern.compile( "^[0-9]+$" );
-
+    private static Pattern keyPattern = Pattern.compile( "\\." );
     /**
      * Converts the properties object into a JSON string.
      * @param properties The properties object to convert.
      * @return A JSON string representing the object.
      */
-    public static String convertToJson(Properties properties){
+    public static String convertToJson(Properties properties, boolean pretty, boolean escape, boolean flattenKeys){
         JsonObject json = new JsonObject();
         for (Object key: properties.keySet()){
-            String value = properties.getProperty(key.toString());
+            String keyValue = key.toString();
+            String value = properties.getProperty(keyValue);
+            if (flattenKeys){
+                Matcher matcher = keyPattern.matcher(keyValue);
+                keyValue = matcher.replaceAll("_");
+            }
             if (value.equals("true") || value.equals("false")){
-                json.addProperty(key.toString(), Boolean.parseBoolean(value));
+                json.addProperty(keyValue, Boolean.parseBoolean(value));
             } else if (intPattern.matcher(value).matches()){
-                json.addProperty(key.toString(), Integer.parseInt(value));
+                json.addProperty(keyValue, Integer.parseInt(value));
             } else if (floatPattern.matcher(value).matches()){
-                json.addProperty(key.toString(), Float.parseFloat(value));
+                json.addProperty(keyValue, Float.parseFloat(value));
             } else {
-                json.addProperty(key.toString(), value);
+                json.addProperty(keyValue, value);
             }
         }
 
-        return new Gson().toJson(json);
+		if(!pretty && escape){
+        	return new Gson().toJson(json);
+		}
+		GsonBuilder builder = new GsonBuilder();
+		if(pretty) {
+			builder.setPrettyPrinting();
+		}
+		if(!escape) {
+			builder.disableHtmlEscaping();
+		}
+		return builder.create().toJson(json);
     }
 
     /**
@@ -67,8 +83,8 @@ public class PropertyConverter {
      * @param callback The name of the callback to call.
      * @return A JSONP string representing the object.
      */
-    public static String convertToJsonP(Properties properties, String callback){
-        return callback + "(" + convertToJson(properties) + ");";
+    public static String convertToJsonP(Properties properties, String callback, boolean pretty, boolean escape, boolean flattenKeys){
+        return callback + "(" + convertToJson(properties, pretty, escape, flattenKeys) + ");";
     }
 
     /**
@@ -78,8 +94,8 @@ public class PropertyConverter {
      * @param variable The name of the variable to store the object.
      * @return A JavaScript string representing the object.
      */
-    public static String convertToJavaScript(Properties properties, String variable){
-        String result = variable + "=" + convertToJson(properties) + ";";
+    public static String convertToJavaScript(Properties properties, String variable, boolean pretty, boolean escape, boolean flattenKeys){
+        String result = variable + "=" + convertToJson(properties, pretty, escape, flattenKeys) + ";";
         if (!variable.contains(".")){
             result = "var " + result;
         }
